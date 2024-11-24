@@ -6,9 +6,14 @@ use eframe::egui::plot::{Line, Plot, Value, Values};
 use eframe::egui::{self, RichText};
 use eframe::{self, App, Frame};
 use serialport::SerialPortInfo;
+use webbrowser;
 
 fn main() {
-    let native_options = eframe::NativeOptions::default();
+    let native_options = eframe::NativeOptions {
+        initial_window_size: Some(egui::vec2(1280.0, 720.0)),
+        ..Default::default()
+    };
+
     eframe::run_native(
         "Serial Data Plotter",
         native_options,
@@ -17,6 +22,12 @@ fn main() {
             Box::new(MyApp::new())
         }),
     );
+}
+
+#[derive(PartialEq)]
+enum Theme {
+    Light,
+    Dark,
 }
 
 struct MyApp {
@@ -33,9 +44,10 @@ struct MyApp {
     is_collecting: bool,
 
     window_length: f64,
-
-
     y_max: f64,
+
+    theme: Theme,
+    show_help: bool,
 }
 
 impl MyApp {
@@ -52,20 +64,18 @@ impl MyApp {
             selected_port_index: None,
             baud_rates,
             selected_baud_rate_index: 11,
-
             read_handle: None,
             rx: None,
-
             data: Vec::new(),
             start_time: None,
             is_collecting: false,
-
             window_length: 10.0,
-
-
             y_max: 1000.00,
+            theme: Theme::Dark,
+            show_help: false,
         }
     }
+
     fn start_collection(&mut self) {
         if self.is_collecting {
             return;
@@ -141,95 +151,202 @@ impl MyApp {
         }
     }
 }
+
 impl App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut Frame) {
-        egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
-            ui.horizontal_wrapped(|ui| {
-                ui.add(egui::Label::new(
-                    RichText::new("Serial Data Plotter").heading().strong(),
-                ));
-                ui.with_layout(egui::Layout::right_to_left(), |ui| {
-                    ui.hyperlink_to("About", "https://www.cloakycodes.me");
+        let style = egui::Style {
+            spacing: egui::style::Spacing {
+                item_spacing: egui::vec2(10.0, 10.0),
+                window_margin: egui::style::Margin::same(15.0),
+                button_padding: egui::vec2(10.0, 5.0),
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        ctx.set_style(style);
 
-                    if ui.button("Refresh Ports").clicked() && !self.is_collecting {
+        egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
+            ui.add_space(4.0);
+            ui.horizontal(|ui| {
+                ui.add(egui::Label::new(
+                    RichText::new("Serial Data Plotter")
+                        .heading()
+                        .strong()
+                        .size(24.0),
+                ));
+
+                ui.with_layout(egui::Layout::right_to_left(), |ui| {
+                    let theme_btn = if self.theme == Theme::Dark {
+                        "🌞 Light Mode"
+                    } else {
+                        "🌙 Dark Mode"
+                    };
+
+                    if ui.button(theme_btn).clicked() {
+                        self.theme = if self.theme == Theme::Dark {
+                            ctx.set_visuals(egui::Visuals::light());
+                            Theme::Light
+                        } else {
+                            ctx.set_visuals(egui::Visuals::dark());
+                            Theme::Dark
+                        };
+                    }
+
+                    if ui.button("ℹ️ Help").clicked() {
+                        self.show_help = !self.show_help;
+                    }
+
+                    if ui.button("🔄 Refresh Ports").clicked() && !self.is_collecting {
                         self.available_ports =
                             serialport::available_ports().unwrap_or_else(|_| Vec::new());
                     }
                 });
             });
+            ui.add_space(4.0);
         });
 
-        egui::SidePanel::right("side_panel").show(ctx, |ui| {
-            ui.heading("Configuration");
+        egui::SidePanel::right("side_panel")
+            .resizable(true)
+            .default_width(250.0)
+            .show(ctx, |ui| {
+                ui.add_space(8.0);
+                ui.heading(RichText::new("Configuration").size(20.0));
+                ui.add_space(16.0);
 
-            ui.label("Select Serial Port:");
+                ui.horizontal(|ui| {
+                    ui.label("Status:");
+                    let status_color = if self.is_collecting {
+                        egui::Color32::GREEN
+                    } else {
+                        egui::Color32::RED
+                    };
+                    ui.label(
+                        RichText::new(if self.is_collecting {
+                            "● Connected"
+                        } else {
+                            "● Disconnected"
+                        })
+                        .color(status_color),
+                    );
+                });
 
-            if !self.is_collecting {
-                egui::ComboBox::from_id_source("port_combo")
-                    .selected_text(
-                        self.selected_port_index
-                            .and_then(|i| self.available_ports.get(i))
-                            .map_or("Select a port", |info| info.port_name.as_str()),
-                    )
-                    .show_ui(ui, |ui| {
-                        for (i, port) in self.available_ports.iter().enumerate() {
-                            ui.selectable_value(
-                                &mut self.selected_port_index,
-                                Some(i),
-                                &port.port_name,
-                            );
-                        }
-                    });
-
-                ui.label("Select Baud Rate:");
-
-                egui::ComboBox::from_id_source("baud_combo")
-                    .selected_text(format!(
-                        "{}",
-                        self.baud_rates[self.selected_baud_rate_index]
-                    ))
-                    .show_ui(ui, |ui| {
-                        for (i, &baud) in self.baud_rates.iter().enumerate() {
-                            ui.selectable_value(
-                                &mut self.selected_baud_rate_index,
-                                i,
-                                format!("{}", baud),
-                            );
-                        }
-                    });
+                ui.add_space(8.0);
                 ui.separator();
-            } else {
-                if let Some(port_index) = self.selected_port_index {
-                    if let Some(port_info) = self.available_ports.get(port_index) {
-                        ui.label(format!("Port: {}", port_info.port_name));
+                ui.add_space(8.0);
+
+                if !self.is_collecting {
+                    ui.label(RichText::new("Serial Port").strong());
+                    egui::ComboBox::from_id_source("port_combo")
+                        .selected_text(
+                            self.selected_port_index
+                                .and_then(|i| self.available_ports.get(i))
+                                .map_or("Select a port", |info| info.port_name.as_str()),
+                        )
+                        .show_ui(ui, |ui| {
+                            for (i, port) in self.available_ports.iter().enumerate() {
+                                ui.selectable_value(
+                                    &mut self.selected_port_index,
+                                    Some(i),
+                                    &port.port_name,
+                                );
+                            }
+                        });
+
+                    ui.add_space(8.0);
+                    ui.label(RichText::new("Baud Rate").strong());
+                    egui::ComboBox::from_id_source("baud_combo")
+                        .selected_text(format!(
+                            "{}",
+                            self.baud_rates[self.selected_baud_rate_index]
+                        ))
+                        .show_ui(ui, |ui| {
+                            for (i, &baud) in self.baud_rates.iter().enumerate() {
+                                ui.selectable_value(
+                                    &mut self.selected_baud_rate_index,
+                                    i,
+                                    format!("{}", baud),
+                                );
+                            }
+                        });
+                } else {
+                    ui.label(RichText::new("Active Connection").strong());
+                    if let Some(port_index) = self.selected_port_index {
+                        if let Some(port_info) = self.available_ports.get(port_index) {
+                            ui.label(format!("Port: {}", port_info.port_name));
+                        }
                     }
+                    ui.label(format!(
+                        "Baud Rate: {}",
+                        self.baud_rates[self.selected_baud_rate_index]
+                    ));
                 }
-                ui.label(format!(
-                    "Baud Rate: {}",
-                    self.baud_rates[self.selected_baud_rate_index]
-                ));
-            };
 
-            ui.separator();
+                ui.add_space(16.0);
+                ui.separator();
+                ui.add_space(8.0);
 
-            ui.add(egui::Slider::new(&mut self.window_length, 4.0..=100.0).text("Window Length"));
+                ui.label(RichText::new("Plot Settings").strong());
+                ui.add(
+                    egui::Slider::new(&mut self.window_length, 4.0..=100.0)
+                        .text("Window Length (s)")
+                        .clamp_to_range(true),
+                );
 
-            ui.separator();
+                ui.add_space(16.0);
+                ui.separator();
+                ui.add_space(8.0);
 
-            ui.separator();
+                ui.horizontal(|ui| {
+                    if self.is_collecting {
+                        if ui
+                            .add_sized(
+                                [120.0, 30.0],
+                                egui::Button::new(
+                                    RichText::new("⏹ Stop")
+                                        .color(egui::Color32::from_rgb(255, 100, 100)),
+                                ),
+                            )
+                            .clicked()
+                        {
+                            self.stop_collection();
+                        }
+                    } else {
+                        if ui
+                            .add_sized(
+                                [120.0, 30.0],
+                                egui::Button::new(
+                                    RichText::new("▶ Start")
+                                        .color(egui::Color32::from_rgb(100, 255, 100)),
+                                ),
+                            )
+                            .clicked()
+                        {
+                            self.start_collection();
+                        }
+                    }
+                });
+            });
 
-            if self.is_collecting {
-                if ui.button("Stop").clicked() {
-                    self.stop_collection();
-                }
-            } else {
-                if ui.button("Start").clicked() {
-                    self.start_collection();
-                }
-            }
-
-            ui.label("Make sure your device is connected and sending data.");
-        });
+        if self.show_help {
+            egui::Window::new("Help & Information")
+                .open(&mut self.show_help)
+                .resizable(false)
+                .show(ctx, |ui| {
+                    ui.heading("How to use Serial Data Plotter");
+                    ui.add_space(8.0);
+                    ui.label("1. Select your serial port from the dropdown menu");
+                    ui.label("2. Choose the appropriate baud rate");
+                    ui.label("3. Click 'Start' to begin data collection");
+                    ui.label("4. Adjust the window length to change the visible time range");
+                    ui.add_space(16.0);
+                    ui.separator();
+                    ui.add_space(8.0);
+                    ui.label("For more information, visit:");
+                    if ui.link("www.cloakycodes.me").clicked() {
+                        webbrowser::open("https://www.cloakycodes.me").ok();
+                    }
+                });
+        }
 
         egui::CentralPanel::default().show(ctx, |ui| {
             if self.is_collecting {
@@ -239,9 +356,7 @@ impl App for MyApp {
                             let elapsed = start_time.elapsed().as_secs_f64();
                             self.data.push([elapsed, value]);
 
-                            // Always keep only window_length worth of data
                             if self.data.len() > 2 {
-                                // Need at least 2 points for a line
                                 let latest_time = self.data.last().unwrap()[0];
                                 let cutoff_time = latest_time - self.window_length;
                                 while self.data.len() > 2 && self.data[0][0] < cutoff_time {
@@ -256,29 +371,40 @@ impl App for MyApp {
             if !self.data.is_empty() {
                 let line = Line::new(Values::from_values_iter(
                     self.data.iter().cloned().map(|[x, y]| Value::new(x, y)),
-                ));
+                ))
+                .width(2.0)
+                .color(if self.theme == Theme::Dark {
+                    egui::Color32::from_rgb(0, 255, 255)
+                } else {
+                    egui::Color32::from_rgb(0, 128, 255)
+                });
 
-                let mut plot = Plot::new("Serial Data Plot")
-                    .view_aspect(2.0)
-                    .legend(egui::plot::Legend::default());
-
-                // Always set x-axis range to follow the latest data
                 let latest_time = self.data.last().unwrap()[0];
-                plot = plot
+                Plot::new("Serial Data Plot")
+                    .view_aspect(2.0)
+                    .show_background(false)
+                    .show_x(true)
                     .include_x(latest_time - self.window_length)
                     .include_x(latest_time)
-                    .include_y(self.y_max);
-
-
-                // if !self.auto_scale_y {
-                //     plot = plot.include_y(self.y_min).include_y(self.y_max).include_x(latest_time - self.window_length);
-                // }
-
-                plot.show(ui, |plot_ui| {
-                    plot_ui.line(line);
-                });
+                    .include_y(self.y_max)
+                    .legend(egui::plot::Legend::default())
+                    .show(ui, |plot_ui| {
+                        plot_ui.line(line);
+                    });
             } else {
-                ui.label("No data to display. Start collection to see data.");
+                ui.vertical_centered(|ui| {
+                    ui.add_space(ui.available_height() / 3.0);
+                    ui.label(
+                        RichText::new("No data to display")
+                            .size(24.0)
+                            .color(egui::Color32::from_gray(128)),
+                    );
+                    ui.label(
+                        RichText::new("Start collection to see data")
+                            .size(16.0)
+                            .color(egui::Color32::from_gray(128)),
+                    );
+                });
             }
         });
 
