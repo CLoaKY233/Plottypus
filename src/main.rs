@@ -25,7 +25,6 @@ struct MyApp {
     baud_rates: Vec<u32>,
     selected_baud_rate_index: usize,
 
-
     read_handle: Option<thread::JoinHandle<()>>,
     rx: Option<Receiver<f64>>,
 
@@ -34,11 +33,9 @@ struct MyApp {
     is_collecting: bool,
 
     window_length: f64,
-    y_min: f64,
+
 
     y_max: f64,
-
-
 }
 
 impl MyApp {
@@ -50,14 +47,11 @@ impl MyApp {
             256000,
         ];
 
-
-
         Self {
             available_ports: ports,
             selected_port_index: None,
             baud_rates,
             selected_baud_rate_index: 11,
-
 
             read_handle: None,
             rx: None,
@@ -67,9 +61,9 @@ impl MyApp {
             is_collecting: false,
 
             window_length: 10.0,
-            y_min:-100.00,
 
-            y_max:1000.00,
+
+            y_max: 1000.00,
         }
     }
     fn start_collection(&mut self) {
@@ -155,8 +149,8 @@ impl App for MyApp {
                     RichText::new("Serial Data Plotter").heading().strong(),
                 ));
                 ui.with_layout(egui::Layout::right_to_left(), |ui| {
-                    ui.hyperlink_to("About","https://www.cloakycodes.me");
-                    ui.
+                    ui.hyperlink_to("About", "https://www.cloakycodes.me");
+
                     if ui.button("Refresh Ports").clicked() && !self.is_collecting {
                         self.available_ports =
                             serialport::available_ports().unwrap_or_else(|_| Vec::new());
@@ -204,9 +198,6 @@ impl App for MyApp {
                         }
                     });
                 ui.separator();
-
-
-
             } else {
                 if let Some(port_index) = self.selected_port_index {
                     if let Some(port_info) = self.available_ports.get(port_index) {
@@ -219,19 +210,9 @@ impl App for MyApp {
                 ));
             };
 
-
-
-
-
-
-
             ui.separator();
 
             ui.add(egui::Slider::new(&mut self.window_length, 4.0..=100.0).text("Window Length"));
-
-
-
-
 
             ui.separator();
 
@@ -285,7 +266,9 @@ impl App for MyApp {
                 let latest_time = self.data.last().unwrap()[0];
                 plot = plot
                     .include_x(latest_time - self.window_length)
-                    .include_x(latest_time).include_y(self.y_max).include_y(self.y_min);
+                    .include_x(latest_time)
+                    .include_y(self.y_max);
+
 
                 // if !self.auto_scale_y {
                 //     plot = plot.include_y(self.y_min).include_y(self.y_max).include_x(latest_time - self.window_length);
