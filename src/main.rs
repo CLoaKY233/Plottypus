@@ -15,7 +15,7 @@ fn main() {
     };
 
     eframe::run_native(
-        "Serial Data Plotter",
+        "Plottypus Perry",
         native_options,
         Box::new(|cc| {
             cc.egui_ctx.set_visuals(egui::Visuals::dark());
@@ -24,11 +24,7 @@ fn main() {
     );
 }
 
-#[derive(PartialEq)]
-enum Theme {
-    Light,
-    Dark,
-}
+
 
 struct MyApp {
     available_ports: Vec<SerialPortInfo>,
@@ -46,7 +42,7 @@ struct MyApp {
     window_length: f64,
     y_max: f64,
 
-    theme: Theme,
+
     show_help: bool,
 }
 
@@ -71,7 +67,7 @@ impl MyApp {
             is_collecting: false,
             window_length: 10.0,
             y_max: 1000.00,
-            theme: Theme::Dark,
+
             show_help: false,
         }
     }
@@ -169,28 +165,15 @@ impl App for MyApp {
             ui.add_space(4.0);
             ui.horizontal(|ui| {
                 ui.add(egui::Label::new(
-                    RichText::new("Serial Data Plotter")
+                    RichText::new("Perry Beta \nversion 0.1.4")
                         .heading()
                         .strong()
-                        .size(24.0),
+                        .size(15.0),
                 ));
 
                 ui.with_layout(egui::Layout::right_to_left(), |ui| {
-                    let theme_btn = if self.theme == Theme::Dark {
-                        "🌞 Light Mode"
-                    } else {
-                        "🌙 Dark Mode"
-                    };
 
-                    if ui.button(theme_btn).clicked() {
-                        self.theme = if self.theme == Theme::Dark {
-                            ctx.set_visuals(egui::Visuals::light());
-                            Theme::Light
-                        } else {
-                            ctx.set_visuals(egui::Visuals::dark());
-                            Theme::Dark
-                        };
-                    }
+
 
                     if ui.button("ℹ️ Help").clicked() {
                         self.show_help = !self.show_help;
@@ -373,16 +356,14 @@ impl App for MyApp {
                     self.data.iter().cloned().map(|[x, y]| Value::new(x, y)),
                 ))
                 .width(2.0)
-                .color(if self.theme == Theme::Dark {
-                    egui::Color32::from_rgb(0, 255, 255)
-                } else {
-                    egui::Color32::from_rgb(0, 128, 255)
-                });
+                .color
+                (egui::Color32::from_rgb(0, 255, 255));
+
 
                 let latest_time = self.data.last().unwrap()[0];
                 Plot::new("Serial Data Plot")
                     .view_aspect(2.0)
-                    .show_background(false)
+                    // .show_background(false)
                     .show_x(true)
                     .include_x(latest_time - self.window_length)
                     .include_x(latest_time)
