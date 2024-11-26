@@ -12,8 +12,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
-import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
-
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts"
 
 const chartConfig = {
   visitors: {
@@ -34,14 +33,22 @@ type GraphComponentProps = {
   blue?: boolean;
   green?: boolean;
   data?: Object[];
+  minY?: number;
+  maxY?: number;
 };
 
-export function GraphComponent({ title, blue = false, green = false, data=[] }: GraphComponentProps) {
+export function GraphComponent({ 
+  title, 
+  blue = false, 
+  green = false, 
+  data = [], 
+  minY = 0, 
+  maxY = 100
+}: GraphComponentProps) {
   return (
     <Card className="border">
       <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
-        <div >
-          {/* <CardTitle>EMG Channel 1</CardTitle> */}
+        <div>
           <CardDescription className="text-center">
             {title}
           </CardDescription>
@@ -52,7 +59,10 @@ export function GraphComponent({ title, blue = false, green = false, data=[] }: 
           config={chartConfig}
           className="aspect-auto h-[250px] w-full"
         >
-          <AreaChart data={data}>
+          <AreaChart 
+            data={data}
+            margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+          >
             <defs>
               <linearGradient id="fillChannel1" x1="0" y1="0" x2="0" y2="1">
                 <stop
@@ -89,6 +99,10 @@ export function GraphComponent({ title, blue = false, green = false, data=[] }: 
               tickFormatter={(value) => {
                 return value
               }}
+            />
+            <YAxis 
+              domain={[minY, maxY]} 
+              hide={true} 
             />
             <ChartTooltip
               cursor={false}

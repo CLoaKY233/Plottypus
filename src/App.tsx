@@ -11,55 +11,7 @@ export default function Home() {
   const socketRef = useRef<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
 
-  // useEffect(() => {
-  //   // Create socket connection
-  //   const socketUrl = "ws://127.0.0.1:8080";
-  //   const socket = new WebSocket(socketUrl);
-
-  //   socketRef.current = socket;
-
-  //   socket.onmessage = async (event: MessageEvent) => {
-  //     try {
-  //       // Parse the incoming data
-  //       const data = JSON.parse(event.data);
-  //       console.log(`Received: ${JSON.stringify(data)}`);
-
-  //       setSocketData(prevData => {
-  //         const newData = [
-  //           ...(prevData || []),
-  //           {
-  //             ...data,
-  //             formattedTimestamp: new Date(data.timestamp).toLocaleTimeString(),
-  //           }
-  //         ].slice(-100);
-  //         return newData;
-  //       });
-
-  //     } catch (error) {
-  //       console.error("Error processing WebSocket message:", error);
-  //     }
-  //   };
-
-  //   socket.onopen = () => {
-  //     console.log('Connected to WebSocket server');
-  //     setIsConnected(true);
-  //   };
-
-  //   socket.onclose = () => {
-  //     console.log("Disconnected from WebSocket server");
-  //     setIsConnected(false);
-  //   };
-
-  //   return () => {
-  //     if (socketRef.current) {
-  //       socketRef.current.close();
-  //       setIsConnected(false);
-  //     }
-  //   };
-  // }, []);
-
   useEffect(() => {
-    // Cleanup WebSocket when the component is unmounted
     return () => {
       if (socketRef.current) {
         socketRef.current.close();
@@ -73,7 +25,7 @@ export default function Home() {
       socketRef.current.close();
       setIsConnected(false);
     } else if (!socketRef.current || !isConnected) {
-      
+
       const socketUrl = "ws://127.0.0.1:8080";
       const socket = new WebSocket(socketUrl);
       socketRef.current = socket;
@@ -90,7 +42,7 @@ export default function Home() {
                 ...data,
                 formattedTimestamp: new Date(data.timestamp).toLocaleTimeString(),
               },
-            ].slice(-100);
+            ].slice(-500);
             return newData;
           });
         } catch (error) {
@@ -108,7 +60,7 @@ export default function Home() {
         setIsConnected(false);
       };
     }
-  }   
+  }
 
   return (
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
@@ -118,14 +70,33 @@ export default function Home() {
           <div className="flex flex-wrap items-start justify-center gap-2 p-4">
             <div className="flex gap-2 w-full">
               <div className="flex-1 p-2">
-                <GraphComponent title="EMG Channel 1" blue={true} data={socketData} />
+                <GraphComponent
+                  title="EMG Channel 1"
+                  data={socketData}
+                  minY={-200}
+                  maxY={1200}
+                  blue
+                />
               </div>
               <div className="flex-1 p-2">
-                <GraphComponent title="EMG Channel 2" green={true} data={socketData} />
+                <GraphComponent
+                  title="EMG Channel 2"
+                  data={socketData}
+                  minY={-200}
+                  maxY={1200}
+                  green
+                />
               </div>
             </div>
             <div className="flex-1 p-4">
-              <GraphComponent title="Real Time EMG Visualization" blue={true} green={true} data={socketData} />
+              <GraphComponent
+                title="Real Time EMG Visualization"
+                data={socketData}
+                minY={-400}
+                maxY={1200}
+                green
+                blue
+              />
             </div>
           </div>
         </div>
