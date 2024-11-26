@@ -1,6 +1,4 @@
-use tauri::command;
 use serde::Serialize;
-use tauri::generate_handler;
 use serialport::{available_ports};
 
 #[derive(Serialize)]

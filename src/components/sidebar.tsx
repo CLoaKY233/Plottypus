@@ -4,11 +4,6 @@ import {
   ChevronsRight,
   Unplug,
   Wifi,
-  Mail,
-  Globe,
-  Circle,
-  Instagram,
-  LinkedinIcon
 } from 'lucide-react'
 import {
   Sidebar,

@@ -1,0 +1,17 @@
+[package]
+name = "web-sockets"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+tokio-tungstenite = "0.15"
+futures = "0.3"
+log = "0.4"
+env_logger = "0.9"
+warp = "0.3"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+rand = "0.8"
+futures-util = "0.3"
+chrono = { version = "0.4", features = ["unstable-locales"] }

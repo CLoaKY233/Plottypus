@@ -1,7 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
 
 @layer base {
   :root {
@@ -29,12 +30,7 @@
 
 @font-face {
   font-family: hindi-font;
-  src: url(public/fonts/Ananda_Namaste_Regular.ttf);
-}
-
-@font-face {
-  font-family: montserrat-extraLight;
-  src: url(public/fonts/Montserrat-ExtraLight.ttf);
+  src: url(/fonts/Ananda_Namaste_Regular.ttf);
 }
 
 .hindi {
@@ -42,7 +38,10 @@
 }
 
 .montserrat-extralight {
-  font-family: montserrat-extraLight !important;
+  font-family: "Montserrat", serif;
+  font-optical-sizing: auto;
+  font-weight: 200;
+  font-style: normal;
 }
 
 .logo.vite:hover {
@@ -68,9 +67,12 @@
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
 
-  -webkit-user-select: none; /* Safari */
-  -ms-user-select: none; /* IE 10 and IE 11 */
-  user-select: none; /* Standard syntax */
+  -webkit-user-select: none;
+  /* Safari */
+  -ms-user-select: none;
+  /* IE 10 and IE 11 */
+  user-select: none;
+  /* Standard syntax */
 }
 
 .container {
@@ -133,6 +135,7 @@ button {
 button:hover {
   border-color: #396cd8;
 }
+
 button:active {
   border-color: #396cd8;
   background-color: #e8e8e8;
@@ -162,6 +165,7 @@ button {
     color: #ffffff;
     background-color: #0f0f0f98;
   }
+
   button:active {
     background-color: #0f0f0f69;
   }
@@ -203,6 +207,7 @@ button {
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
+
   .dark {
     --background: 0 0% 3.9%;
     --foreground: 0 0% 98%;
@@ -243,9 +248,8 @@ button {
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }
 }
-
-
