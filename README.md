@@ -75,4 +75,4 @@ graph TD
 
 ## Help
 
-For more information, visit [www.cloakycodes.me](https://www.cloaky.works).
+For more information, visit [www.cloaky.works](https://www.cloaky.works).
